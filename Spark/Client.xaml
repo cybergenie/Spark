@@ -1,0 +1,33 @@
+﻿<Page
+    x:Class="Spark.Client"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Spark"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <ScrollViewer Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Padding="12,10,12,12">
+        <StackPanel>
+            <TextBlock Text="说明:" Style="{StaticResource SampleHeaderTextStyle}"/>
+            <TextBlock Style="{StaticResource ScenarioDescriptionTextStyle}" Text="读取传感器数据"/>
+            <TextBlock TextWrapping="Wrap" Margin="0,10,0,0">
+                单击连接设备，与传感器建立通讯。
+                单击获取数据读取传感器数值。
+            </TextBlock>
+            <TextBlock Style="{StaticResource ListItemTextStyle}" TextWrapping="Wrap" Margin="0,10,0,0">
+                已选中的设备: <Run x:Name="SelectedDeviceRun" FontWeight="Bold"/>
+            </TextBlock>
+            <StackPanel Orientation="Horizontal">
+                <Button x:Name="ConnectButton" Content="连接设备" Click="{x:Bind ConnectButton_Click}" Margin="20,10,10,10" Height="35" Width="85"/>
+                <Button x:Name="ValueChangedSubscribeToggle" Content="读取数据" Click="{x:Bind ValueChangedSubscribeToggle_Click}"
+                        Visibility="Collapsed" Margin="10,10,10,10" Width="85" Height="35"/>
+            </StackPanel>
+
+            <TextBlock x:Name="CharacteristicLatestValue" Margin="0,10,0,0"/>
+            <TextBlock x:Name="CharacteristicLatestValue1" Margin="0,10,0,0"/>
+            <TextBlock x:Name="CharacteristicLatestValue2" Margin="0,10,0,0"/>
+            <TextBlock x:Name="CharacteristicLatestValue3" Margin="0,10,0,0"/>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

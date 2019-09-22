@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Enumeration;
 using Windows.Security.Cryptography;
+using Windows.Storage;
 using Windows.Storage.Streams;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
@@ -22,18 +26,18 @@ namespace Spark
     public sealed partial class Client : Page
     {
         private MainPage rootPage = MainPage.Current;
+        private List<BluetoothLEDevice> bluetoothLeDevice = new List<BluetoothLEDevice>();
+        private GattCharacteristic[] registeredCharacteristic = new GattCharacteristic[3];
+        
+        struct Data
+        {
+            public DateTime dateTime;
+            public string data;
+        }
 
-        private BluetoothLEDevice bluetoothLeDevice = null;
-        private GattCharacteristic selectedCharacteristic;
+        private List<Data>[] datas = { new List<Data>(), new List<Data>(), new List<Data>() };
 
-        // Only one registered characteristic at a time.
-        private GattCharacteristic registeredCharacteristic;
-        private GattPresentationFormat presentationFormat;
-
-        #region Error Codes
-        //readonly int E_BLUETOOTH_ATT_WRITE_NOT_PERMITTED = unchecked((int)0x80650003);
-        //readonly int E_BLUETOOTH_ATT_INVALID_PDU = unchecked((int)0x80650004);
-        //readonly int E_ACCESSDENIED = unchecked((int)0x80070005);
+        #region Error Codes       
         readonly int E_DEVICE_NOT_AVAILABLE = unchecked((int)0x800710df); // HRESULT_FROM_WIN32(ERROR_DEVICE_NOT_AVAILABLE)
         #endregion
 
@@ -43,66 +47,16 @@ namespace Spark
             this.InitializeComponent();
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
+        protected async override void OnNavigatedTo(NavigationEventArgs e)
         {
-            SelectedDeviceRun.Text = rootPage.SelectedBleDeviceName[0];
-            if (string.IsNullOrEmpty(rootPage.SelectedBleDeviceId[0]))
-            {
-                ConnectButton.IsEnabled = false;
-            }
-        }
-
-        protected override async void OnNavigatedFrom(NavigationEventArgs e)
-        {
-            var success = await ClearBluetoothLEDeviceAsync();
-            if (!success)
-            {
-                rootPage.NotifyUser("错误: 无法重置软件状态", NotifyType.ErrorMessage);
-            }
-        }
-        #endregion
-
-        #region Enumerating Services
-        private async Task<bool> ClearBluetoothLEDeviceAsync()
-        {
-            if (subscribedForNotifications)
-            {
-                // Need to clear the CCCD from the remote device so we stop receiving notifications
-                var result = await registeredCharacteristic.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.None);
-                if (result != GattCommunicationStatus.Success)
-                {
-                    return false;
-                }
-                else
-                {
-                    selectedCharacteristic.ValueChanged -= Characteristic_ValueChanged;
-                    subscribedForNotifications = false;
-                }
-            }
-            bluetoothLeDevice?.Dispose();
-            bluetoothLeDevice = null;
-            return true;
-        }
-
-        List<GattDeviceService> _ServiceList = new List<GattDeviceService>();
-        
-        private async void ConnectButton_Click()
-        {
-            ConnectButton.IsEnabled = false;
-            _ServiceList.Clear();
-
-            if (!await ClearBluetoothLEDeviceAsync())
-            {
-                rootPage.NotifyUser("错误: 无法重置状态, 请重试.", NotifyType.ErrorMessage);
-                ConnectButton.IsEnabled = true;
-                return;
-            }
-
+            SelectedDeviceRun.Text = rootPage.SelectedBleDeviceName.Count.ToString(); 
             try
             {
                 // BT_Code: BluetoothLEDevice.FromIdAsync must be called from a UI thread because it may prompt for consent.
-
-                bluetoothLeDevice = await BluetoothLEDevice.FromIdAsync(rootPage.SelectedBleDeviceId[0]);
+                foreach (var SelectedBleDevice in rootPage.SelectedBleDeviceId)
+                {
+                    bluetoothLeDevice.Add(await BluetoothLEDevice.FromIdAsync(SelectedBleDevice));
+                }
 
                 if (bluetoothLeDevice == null)
                 {
@@ -114,49 +68,183 @@ namespace Spark
                 rootPage.NotifyUser("蓝牙没有打开.", NotifyType.ErrorMessage);
             }
 
+            switch (bluetoothLeDevice.Count)
+            {               
+                case 1:
+                    ConnectButton1.IsEnabled = true;
+                    ConnectButton2.IsEnabled = false;
+                    ConnectButton3.IsEnabled = false;
+                    break;
+                case 2:
+                    ConnectButton1.IsEnabled = true;
+                    ConnectButton2.IsEnabled = true;
+                    ConnectButton3.IsEnabled = false;
+                    break;
+                case 3:
+                    ConnectButton1.IsEnabled = true;
+                    ConnectButton2.IsEnabled = true;
+                    ConnectButton3.IsEnabled = true;
+                    break;
+                default:
+                    ConnectButton1.IsEnabled = false;
+                    ConnectButton2.IsEnabled = false;
+                    ConnectButton3.IsEnabled = false;
+                    break;
+
+            }
+        }
+
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            //var success = await ClearBluetoothLEDeviceAsync();
+            //if (!success)
+            //{
+            //    rootPage.NotifyUser("错误: 无法重置软件状态", NotifyType.ErrorMessage);
+            //}
+        }
+        #endregion
+
+        #region Enumerating Services       
+
+        private async void ConnectButton1_Click()
+        {      
+            ConnectButton1.IsEnabled = false;
+            //subscribedForNotifications = false;
+
             if (bluetoothLeDevice != null)
             {
                 // Note: BluetoothLEDevice.GattServices property will return an empty list for unpaired devices. For all uses we recommend using the GetGattServicesAsync method.
                 // BT_Code: GetGattServicesAsync returns a list of all the supported services of the device (even if it's not paired to the system).
                 // If the services supported by the device are expected to change during BT usage, subscribe to the GattServicesChanged event.
-                GattDeviceServicesResult result = await bluetoothLeDevice.GetGattServicesAsync(BluetoothCacheMode.Uncached);
 
-                if (result.Status == GattCommunicationStatus.Success)
+                var _bluetoothLeDevice = bluetoothLeDevice[0];
                 {
-                    var services = result.Services;
-                    rootPage.NotifyUser(String.Format("发现 {0} 服务", services.Count), NotifyType.StatusMessage);
-                    foreach (var service in services)
+                    List<GattDeviceServicesResult> result = new List<GattDeviceServicesResult>();
+                    result.Add(await _bluetoothLeDevice.GetGattServicesAsync(BluetoothCacheMode.Uncached));
+                    foreach (var _result in result)
                     {
-                       // ServiceList.Items.Add(new ComboBoxItem { Content = DisplayHelpers.GetServiceName(service), Tag = service });
-                        _ServiceList.Add(service);
+
+                        if (_result.Status == GattCommunicationStatus.Success)
+                        {
+                            var services = _result.Services;
+                            rootPage.NotifyUser(String.Format("发现 {0} 服务", services.Count), NotifyType.StatusMessage);
+                            ServiceList(services,0);
+                        }
+                        else
+                        {
+                            rootPage.NotifyUser("无法获取设备", NotifyType.ErrorMessage);
+                        }
                     }
-                   // ConnectButton.Visibility = Visibility.Collapsed;
-                   
                 }
-                else
-                {
-                    rootPage.NotifyUser("无法获取设备", NotifyType.ErrorMessage);
-                }
+                
             }
-            ConnectButton.IsEnabled = true;
-            if(_ServiceList.Count>0)
+
+            ConnectButton1.IsEnabled = true;
+
+        }
+
+        private async void ConnectButton2_Click()
+        {
+
+            ConnectButton2.IsEnabled = false;
+            //subscribedForNotifications[2] = false;
+
+            if (bluetoothLeDevice != null)
             {
-                ServiceList();
+                // Note: BluetoothLEDevice.GattServices property will return an empty list for unpaired devices. For all uses we recommend using the GetGattServicesAsync method.
+                // BT_Code: GetGattServicesAsync returns a list of all the supported services of the device (even if it's not paired to the system).
+                // If the services supported by the device are expected to change during BT usage, subscribe to the GattServicesChanged event.
+
+                var _bluetoothLeDevice = bluetoothLeDevice[1];
+                {
+                    List<GattDeviceServicesResult> result = new List<GattDeviceServicesResult>();
+                    result.Add(await _bluetoothLeDevice.GetGattServicesAsync(BluetoothCacheMode.Uncached));
+                    foreach (var _result in result)
+                    {
+
+                        if (_result.Status == GattCommunicationStatus.Success)
+                        {
+                            var services = _result.Services;
+                            rootPage.NotifyUser(String.Format("发现 {0} 服务", services.Count), NotifyType.StatusMessage);
+                            ServiceList(services,1);
+                        }
+                        else
+                        {
+                            rootPage.NotifyUser("无法获取设备", NotifyType.ErrorMessage);
+                        }
+                    }
+                }
+
             }
-            
+
+            ConnectButton2.IsEnabled = true;
+
+        }
+
+        private async void ConnectButton3_Click()
+        {
+            ConnectButton2.IsEnabled = false;
+            //subscribedForNotifications = false;
+
+            if (bluetoothLeDevice != null)
+            {
+                // Note: BluetoothLEDevice.GattServices property will return an empty list for unpaired devices. For all uses we recommend using the GetGattServicesAsync method.
+                // BT_Code: GetGattServicesAsync returns a list of all the supported services of the device (even if it's not paired to the system).
+                // If the services supported by the device are expected to change during BT usage, subscribe to the GattServicesChanged event.
+
+                var _bluetoothLeDevice = bluetoothLeDevice[2];
+                {
+                    List<GattDeviceServicesResult> result = new List<GattDeviceServicesResult>();
+                    result.Add(await _bluetoothLeDevice.GetGattServicesAsync(BluetoothCacheMode.Uncached));
+                    foreach (var _result in result)
+                    {
+
+                        if (_result.Status == GattCommunicationStatus.Success)
+                        {
+                            var services = _result.Services;
+                            rootPage.NotifyUser(String.Format("发现 {0} 服务", services.Count), NotifyType.StatusMessage);
+                            ServiceList(services, 2);
+                        }
+                        else
+                        {
+                            rootPage.NotifyUser("无法获取设备", NotifyType.ErrorMessage);
+                        }
+                    }
+                }
+
+            }
+
+            ConnectButton2.IsEnabled = true;
+
         }
         #endregion
 
-        #region Enumerating Characteristics
-        private async void ServiceList()
+        private void StopButton_Click()
         {
-            //var service = (GattDeviceService)((ComboBoxItem)ServiceList.SelectedItem)?.Tag;
-            RemoveValueChangedHandler();
-
-            var service = _ServiceList[2];
-            List<GattCharacteristic> _CharacteristicList = new List<GattCharacteristic>();
 
 
+            try
+            {
+
+                RemoveValueChangedHandler(-1);
+
+                rootPage.NotifyUser("停止读取传感器数据成功", NotifyType.StatusMessage);
+                WriteToFile();
+
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                // This usually happens when a device reports that it support notify, but it actually doesn't.
+                rootPage.NotifyUser(ex.Message, NotifyType.ErrorMessage);
+            }
+        }
+
+        #region Enumerating Characteristics
+        private async void ServiceList(IReadOnlyList<GattDeviceService> services,int index)
+        {
+            GattCharacteristic selectedCharacteristic;           
+
+            var service = services[2];    
             IReadOnlyList<GattCharacteristic> characteristics = null;
             try
             {
@@ -166,10 +254,10 @@ namespace Spark
                 {
                     // BT_Code: Get all the child characteristics of a service. Use the cache mode to specify uncached characterstics only 
                     // and the new Async functions to get the characteristics of unpaired devices as well. 
-                    var result1 = await service.GetCharacteristicsAsync(BluetoothCacheMode.Uncached);
-                    if (result1.Status == GattCommunicationStatus.Success)
+                    var characteristicsResult = await service.GetCharacteristicsAsync(BluetoothCacheMode.Uncached);
+                    if (characteristicsResult.Status == GattCommunicationStatus.Success)
                     {
-                        characteristics = result1.Characteristics;
+                        characteristics = characteristicsResult.Characteristics;
                     }
                     else
                     {
@@ -197,20 +285,14 @@ namespace Spark
                 characteristics = new List<GattCharacteristic>();
             }
 
-            foreach (GattCharacteristic c in characteristics)
-            {                
-                _CharacteristicList.Add(c);
-            }          
-            
-            
-            if (_CharacteristicList.Count >0)
+            if (characteristics.Count > 0)
             {
-                selectedCharacteristic = _CharacteristicList[0];
-               
+                selectedCharacteristic = characteristics[0];
+                ValueChangedSubscribe(selectedCharacteristic,index);
             }
             else
             {
-                EnableCharacteristicPanels(GattCharacteristicProperties.None);
+                //EnableCharacteristicPanels(GattCharacteristicProperties.None);
                 rootPage.NotifyUser("没有获得特征列表", NotifyType.ErrorMessage);
                 return;
             }
@@ -222,77 +304,108 @@ namespace Spark
             {
                 rootPage.NotifyUser("获取描述信息失败: " + result.Status.ToString(), NotifyType.ErrorMessage);
             }
+            
 
-            // BT_Code: There's no need to access presentation format unless there's at least one. 
-            presentationFormat = null;
-            if (selectedCharacteristic.PresentationFormats.Count > 0)
-            {
-
-                if (selectedCharacteristic.PresentationFormats.Count.Equals(1))
-                {
-                    // Get the presentation format since there's only one way of presenting it
-                    presentationFormat = selectedCharacteristic.PresentationFormats[0];
-                }
-                else
-                {
-                    // It's difficult to figure out how to split up a characteristic and encode its different parts properly.
-                    // In this case, we'll just encode the whole thing to a string to make it easy to print out.
-                }
-            }
-
-            // Enable/disable operations based on the GattCharacteristicProperties.
-            EnableCharacteristicPanels(selectedCharacteristic.CharacteristicProperties);
         }
         #endregion
 
-        private void AddValueChangedHandler()
+        private void AddValueChangedHandler(GattCharacteristic selectedCharacteristic,int index)
         {
-            ValueChangedSubscribeToggle.Content = "停止读取";
-            if (!subscribedForNotifications)
+            switch (index)
             {
-                registeredCharacteristic = selectedCharacteristic;
-                registeredCharacteristic.ValueChanged += Characteristic_ValueChanged;
-                subscribedForNotifications = true;
+                case 0:
+                    if (!subscribedForNotifications[index])
+                    {
+                        ConnectButton1.Content = "断开设备1";
+                        registeredCharacteristic[0]=selectedCharacteristic;
+                        selectedCharacteristic.ValueChanged += Characteristic_ValueChanged_0;
+                        subscribedForNotifications[index] = true;
+
+                    }
+                    break;
+                case 1:
+                    if (!subscribedForNotifications[index])
+                    {
+                        ConnectButton2.Content = "断开设备2";
+                        registeredCharacteristic[1]= selectedCharacteristic;
+                        selectedCharacteristic.ValueChanged += Characteristic_ValueChanged_1;
+                        subscribedForNotifications[index] = true;
+                    }
+                    break;
+                case 2:
+                    if (!subscribedForNotifications[index])
+                    {
+                        ConnectButton3.Content = "断开设备3";
+                        registeredCharacteristic[2]=selectedCharacteristic;
+                        selectedCharacteristic.ValueChanged += Characteristic_ValueChanged_2;
+                        subscribedForNotifications[index] = true;
+                    }
+                    break;
             }
         }
 
-        private void RemoveValueChangedHandler()
+        private void RemoveValueChangedHandler(int index)
         {
-            ValueChangedSubscribeToggle.Content = "读取数据";
-            if (subscribedForNotifications)
+            switch (index)
             {
-                registeredCharacteristic.ValueChanged -= Characteristic_ValueChanged;
-                registeredCharacteristic = null;
-                subscribedForNotifications = false;
+                case 0:
+                    if (registeredCharacteristic[0] != null && subscribedForNotifications[0])
+                    {
+                        ConnectButton1.Content = "连接设备1";
+                        registeredCharacteristic[0].ValueChanged -= Characteristic_ValueChanged_0;
+                        registeredCharacteristic[0] = null;
+                        subscribedForNotifications[0] = false;
+                    }
+                    break;
+                case 1:
+                    if (registeredCharacteristic[1] != null && subscribedForNotifications[1])
+                    {
+                        ConnectButton2.Content = "连接设备2";
+                        registeredCharacteristic[1].ValueChanged -= Characteristic_ValueChanged_1;
+                        registeredCharacteristic[1] = null;
+                        subscribedForNotifications[1] = false;
+                    }
+                    break;
+                case 2:
+                    if (registeredCharacteristic[2] != null && subscribedForNotifications[2])
+                    {
+                        ConnectButton3.Content = "连接设备3";
+                        registeredCharacteristic[2].ValueChanged -= Characteristic_ValueChanged_2;
+                        registeredCharacteristic[2] = null;
+                        subscribedForNotifications[2] = false;
+                    }
+                    break;
+                default:
+                    if (registeredCharacteristic[0] != null && subscribedForNotifications[0])
+                    {
+                        ConnectButton1.Content = "连接设备1";
+                        registeredCharacteristic[0].ValueChanged -= Characteristic_ValueChanged_0;
+                        registeredCharacteristic[0] = null;
+                        subscribedForNotifications[0] = false;
+                    }
+                    if (registeredCharacteristic[1] != null && subscribedForNotifications[1])
+                    {
+                        ConnectButton2.Content = "连接设备2";
+                        registeredCharacteristic[1].ValueChanged -= Characteristic_ValueChanged_1;
+                        registeredCharacteristic[1] = null;
+                        subscribedForNotifications[1] = false;
+                    }
+                    if (registeredCharacteristic[2] != null && subscribedForNotifications[2])
+                    {
+                        ConnectButton3.Content = "连接设备3";
+                        registeredCharacteristic[2].ValueChanged -= Characteristic_ValueChanged_2;
+                        registeredCharacteristic[2] = null;
+                        subscribedForNotifications[2] = false;
+                    }
+                    break;
             }
-        }
-
-       
-        private void SetVisibility(UIElement element, bool visible)
-        {
-            element.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
-        }
-
-        private void EnableCharacteristicPanels(GattCharacteristicProperties properties)
-        {
-            // BT_Code: Hide the controls which do not apply to this characteristic.
-            //SetVisibility(CharacteristicReadButton, properties.HasFlag(GattCharacteristicProperties.Read));
-
-            //SetVisibility(CharacteristicWritePanel,
-            //    properties.HasFlag(GattCharacteristicProperties.Write) ||
-            //    properties.HasFlag(GattCharacteristicProperties.WriteWithoutResponse));
-            //CharacteristicWriteValue.Text = "";
-
-            SetVisibility(ValueChangedSubscribeToggle, properties.HasFlag(GattCharacteristicProperties.Indicate) ||
-                                                       properties.HasFlag(GattCharacteristicProperties.Notify));
 
         }
-             
 
-        private bool subscribedForNotifications = false;
-        private async void ValueChangedSubscribeToggle_Click()
+        private bool[] subscribedForNotifications = { false,false,false };        
+        private async void ValueChangedSubscribe(GattCharacteristic selectedCharacteristic ,int index)
         {
-            if (!subscribedForNotifications)
+            if (!subscribedForNotifications[index])
             {
                 // initialize status
                 GattCommunicationStatus status = GattCommunicationStatus.Unreachable;
@@ -315,12 +428,12 @@ namespace Spark
 
                     if (status == GattCommunicationStatus.Success)
                     {
-                        AddValueChangedHandler();
-                        rootPage.NotifyUser("获得传感器数据成功", NotifyType.StatusMessage);
+                        AddValueChangedHandler(selectedCharacteristic,index);
+                        rootPage.NotifyUser($"获得设备{index+1}数据成功", NotifyType.StatusMessage);
                     }
                     else
                     {
-                        rootPage.NotifyUser($"获得传感器数据失败: {status}", NotifyType.ErrorMessage);
+                        rootPage.NotifyUser($"获得设备{index+1}数据失败: {status}", NotifyType.ErrorMessage);
                     }
                 }
                 catch (UnauthorizedAccessException ex)
@@ -341,13 +454,13 @@ namespace Spark
                                 GattClientCharacteristicConfigurationDescriptorValue.None);
                     if (result == GattCommunicationStatus.Success)
                     {
-                        subscribedForNotifications = false;
-                        RemoveValueChangedHandler();
-                        rootPage.NotifyUser("停止读取传感器数据成功", NotifyType.StatusMessage);
+                        RemoveValueChangedHandler(index);
+                        subscribedForNotifications[index] = false;                        
+                        rootPage.NotifyUser($"停止读取设备{index+1}数据成功", NotifyType.StatusMessage);
                     }
                     else
                     {
-                        rootPage.NotifyUser($"停止读取传感器数据失败: {result}", NotifyType.ErrorMessage);
+                        rootPage.NotifyUser($"停止读取设备{index+1}数据失败: {result}", NotifyType.ErrorMessage);
                     }
                 }
                 catch (UnauthorizedAccessException ex)
@@ -356,76 +469,108 @@ namespace Spark
                     rootPage.NotifyUser(ex.Message, NotifyType.ErrorMessage);
                 }
             }
+
         }
 
-        private async void Characteristic_ValueChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
+        private async void Characteristic_ValueChanged_0(GattCharacteristic sender, GattValueChangedEventArgs args)
+        {            
+            // BT_Code: An Indicate or Notify reported that the value has changed.
+            // Display the new value with a timestamp.
+            var newValue = FormatValueByPresentation(args.CharacteristicValue);
+            Data data;
+            data.dateTime = DateTime.Now;
+            data.data = newValue;
+            var message = $"设备:{rootPage.SelectedBleDeviceName[0]}     时间 {data.dateTime:hh:mm:ss.FFF}     数值:{data.data}";            
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+                () => CharacteristicLatestValue.Text = message);
+            datas[0].Add(data);
+            Debug.WriteLine(sender.Uuid.ToString());
+        }
+
+        private async void Characteristic_ValueChanged_1(GattCharacteristic sender, GattValueChangedEventArgs args)
         {
             // BT_Code: An Indicate or Notify reported that the value has changed.
             // Display the new value with a timestamp.
-            var newValue = FormatValueByPresentation(args.CharacteristicValue, presentationFormat);
-            var message = $"时间 {DateTime.Now:hh:mm:ss.FFF}     数值:{newValue}";
+            var newValue = FormatValueByPresentation(args.CharacteristicValue);
+            Data data;
+            data.dateTime = DateTime.Now;
+            data.data = newValue;
+            var message = $"设备:{rootPage.SelectedBleDeviceName[1]}     时间 {data.dateTime:hh:mm:ss.FFF}     数值:{data.data}";
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
-                () => CharacteristicLatestValue.Text = message);
+                () => CharacteristicLatestValue1.Text = message);
+            datas[1].Add(data);
+            Debug.WriteLine(sender.Uuid.ToString());
+        }
+        private async void Characteristic_ValueChanged_2(GattCharacteristic sender, GattValueChangedEventArgs args)
+        {
+            // BT_Code: An Indicate or Notify reported that the value has changed.
+            // Display the new value with a timestamp.
+            var newValue = FormatValueByPresentation(args.CharacteristicValue);
+            Data data;
+            data.dateTime = DateTime.Now;
+            data.data = newValue;
+            var message = $"设备:{rootPage.SelectedBleDeviceName[2]}     时间 {data.dateTime:hh:mm:ss.FFF}     数值:{data.data}";
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+                () => CharacteristicLatestValue2.Text = message);
+            datas[2].Add(data);
+            Debug.WriteLine(sender.Uuid.ToString());
         }
 
-        private string FormatValueByPresentation(IBuffer buffer, GattPresentationFormat format)
+        private string FormatValueByPresentation(IBuffer buffer)
         {
             // BT_Code: For the purpose of this sample, this function converts only UInt32 and
             // UTF-8 buffers to readable text. It can be extended to support other formats if your app needs them.
             byte[] data;
             CryptographicBuffer.CopyToByteArray(buffer, out data);
-            if (format != null)
+
+            if (data != null)
             {
-                if (format.FormatType == GattPresentationFormatTypes.UInt32 && data.Length >= 4)
-                {
-                    return BitConverter.ToInt32(data, 0).ToString();
-                }
-                else if (format.FormatType == GattPresentationFormatTypes.Utf8)
-                {
-                    try
-                    {
-                        return Encoding.UTF8.GetString(data);
-                    }
-                    catch (ArgumentException)
-                    {
-                        return "(error: Invalid UTF-8 string)";
-                    }
-                }
-                else
-                {
-                    // Add support for other format types as needed.
-                    return "Unsupported format: " + CryptographicBuffer.EncodeToHexString(buffer);
-                }
-            }
-            else if (data != null)
-            {
-                if (registeredCharacteristic != null)
-                {
-                    // This is our custom calc service Result UUID. Format it like an Int
-                    //if (registeredCharacteristic.Uuid.Equals(Constants.ResultCharacteristicUuid))
-                    {
-                        return BitConverter.ToString(data);
-                    }
-                }
-                else
-                {
-                    try
-                    {
-                        return "Unknown format: " + Encoding.UTF8.GetString(data);
-                    }
-                    catch (ArgumentException)
-                    {
-                        return "Unknown format";
-                    }
-                }
+                return BitConverter.ToString(data);
             }
             else
             {
-                return "Empty data received";
+                return "Unknown format";
             }
-            //return "Unknown format";
         }
-       
+
+        private async void WriteToFile()
+        {
+
+            StorageFolder folder = ApplicationData.Current.LocalFolder;
+            CharacteristicLatestValue3.Text = folder.Path;
+            try
+            {
+                for (int i = 0; i < datas.Length; i++)
+                {
+                    if (i<rootPage.SelectedBleDeviceId.Count)
+                    {
+                        StorageFile sfile = await folder.CreateFileAsync($"{i+1}-传感器{rootPage.SelectedBleDeviceName[i]}数据.csv", CreationCollisionOption.ReplaceExisting);
+                        using (Stream file = await sfile.OpenStreamForWriteAsync())
+                        {
+                            using (StreamWriter writer = new StreamWriter(file))
+                            {
+                                writer.WriteLine("time" + "," + "data");
+                                foreach (var dt in datas[i])
+                                {
+                                    writer.WriteLine(dt.dateTime.ToString("hh:mm:ss.FFF") + "," + dt.data);
+                                }
+                            }
+                        }
+                    }                   
+                    
+                }
+                rootPage.NotifyUser("文件保存成功.", NotifyType.StatusMessage);
+            }
+
+            catch (Exception ex)
+            {
+                rootPage.NotifyUser("文件保存错误:" + ex.ToString(), NotifyType.ErrorMessage);
+            }
+
+
+
+        }
+
     }
 
 

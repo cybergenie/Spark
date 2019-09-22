@@ -16,18 +16,19 @@
                 单击获取数据读取传感器数值。
             </TextBlock>
             <TextBlock Style="{StaticResource ListItemTextStyle}" TextWrapping="Wrap" Margin="0,10,0,0">
-                已选中的设备: <Run x:Name="SelectedDeviceRun" FontWeight="Bold"/>
+                已选中 <Run x:Name="SelectedDeviceRun" FontWeight="Bold"/>个设备：
             </TextBlock>
             <StackPanel Orientation="Horizontal">
-                <Button x:Name="ConnectButton" Content="连接设备" Click="{x:Bind ConnectButton_Click}" Margin="20,10,10,10" Height="35" Width="85"/>
-                <Button x:Name="ValueChangedSubscribeToggle" Content="读取数据" Click="{x:Bind ValueChangedSubscribeToggle_Click}"
-                        Visibility="Collapsed" Margin="10,10,10,10" Width="85" Height="35"/>
+                <Button x:Name="ConnectButton1" Content="连接设备1" Click="{x:Bind ConnectButton1_Click}" Margin="20,10,10,10" Height="35" Width="85"/>
+                <Button x:Name="ConnectButton2" Content="连接设备2" Click="{x:Bind ConnectButton2_Click}" Margin="20,10,10,10" Height="35" Width="85"/>
+                <Button x:Name="ConnectButton3" Content="连接设备3" Click="{x:Bind ConnectButton3_Click}" Margin="20,10,10,10" Height="35" Width="85"/>
+                <Button x:Name="StopButton" Content="停止读取" Click="{x:Bind StopButton_Click}" Margin="20,10,10,10" Height="35" Width="85"/>
             </StackPanel>
 
             <TextBlock x:Name="CharacteristicLatestValue" Margin="0,10,0,0"/>
             <TextBlock x:Name="CharacteristicLatestValue1" Margin="0,10,0,0"/>
             <TextBlock x:Name="CharacteristicLatestValue2" Margin="0,10,0,0"/>
-            <TextBlock x:Name="CharacteristicLatestValue3" Margin="0,10,0,0"/>
+            <TextBox x:Name="CharacteristicLatestValue3" Margin="0,10,0,0"/>
         </StackPanel>
     </ScrollViewer>
 </Page>

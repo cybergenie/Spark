@@ -29,10 +29,11 @@
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="22"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <SplitView x:Name="Splitter" IsPaneOpen="True" Grid.Row="1" DisplayMode="Inline">
+        <SplitView x:Name="Splitter" IsPaneOpen="True" Grid.Row="2" DisplayMode="Inline">
             <SplitView.Pane>
                 <RelativePanel Margin="10,0,0,0">
                     <TextBlock x:Name="SampleTitle" Text="步态测量" Style="{StaticResource SampleHeaderTextStyle}" TextWrapping="Wrap" Margin="0,10,0,0"/>
@@ -48,7 +49,7 @@
                     </ListBox>
                     <StackPanel x:Name="FooterPanel" Orientation="Vertical" RelativePanel.AlignBottomWithPanel="True">
                         <Image Source="Assets/jlu-nursing.png" AutomationProperties.Name="Microsoft Logo" Stretch="None" HorizontalAlignment="Left" Margin="10,0,0,35"/>
-                                           
+
                     </StackPanel>
                 </RelativePanel>
             </SplitView.Pane>
@@ -66,7 +67,7 @@
                 </StackPanel>
             </RelativePanel>
         </SplitView>
-        <StackPanel x:Name="HeaderPanel" Orientation="Horizontal">
+        <StackPanel x:Name="HeaderPanel" Orientation="Horizontal" Grid.RowSpan="2">
             <Border Background="{ThemeResource SystemControlBackgroundChromeMediumBrush}" Grid.Row="0">
                 <ToggleButton Style="{StaticResource SymbolButton}" Click="Button_Click" VerticalAlignment="Top" Foreground="{ThemeResource ApplicationForegroundThemeBrush}">
                     <ToggleButton.Content>
@@ -78,7 +79,7 @@
                  (If the Image conveyed useful information we'd not use AccessibilityView, but instead provide a localized 
                  name for the Image to convey its purpose.) -->
             <Image x:Name="WindowsLogo" Stretch="None" Source="Assets/windows-sdk.png" Margin="0,15,0,0" AutomationProperties.AccessibilityView="Raw" />
-            <TextBlock x:Name="Header" Text="Spark" Style="{StaticResource TagLineTextStyle}" Margin="0,15,0,0" />
+            <TextBlock x:Name="Header" Text="Spark" Style="{StaticResource TagLineTextStyle}" Margin="0,15,0,0" VerticalAlignment="Center" />
         </StackPanel>
     </Grid>
 </Page>

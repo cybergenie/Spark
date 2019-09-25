@@ -13,8 +13,8 @@
 
   <Identity
     Name="745c5c8b-6860-4585-8e18-135c4bac75a6"
-    Publisher="CN=jinwe"
-    Version="1.0.0.0" />
+    Publisher="CN=Li Jinwei"
+    Version="1.0.5.0" />
 
   <mp:PhoneIdentity PhoneProductId="745c5c8b-6860-4585-8e18-135c4bac75a6" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
@@ -42,7 +42,7 @@
         Square44x44Logo="Assets\SmallTile-sdk.png"
         Description="Spark"
         BackgroundColor="#00b2f0">
-        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png">
+        <uap:DefaultTile >
           <uap:ShowNameOnTiles>
             <uap:ShowOn Tile="square150x150Logo"/>
           </uap:ShowNameOnTiles>
@@ -56,41 +56,6 @@
 
   <Capabilities>
     <Capability Name="internetClient" />
-    <uap:Capability Name="removableStorage"/>
-    <uap:Capability Name="picturesLibrary"/>
-    <Capability Name="allJoyn"/>
-    <Capability Name="internetClientServer"/>
-    <uap:Capability Name="voipCall"/>
-    <uap3:Capability Name="backgroundMediaPlayback"/>
-    <Capability Name="codeGeneration"/>
-    <iot:Capability Name="lowLevelDevices"/>
-    <uap:Capability Name="phoneCall"/>
-    <uap2:Capability Name="phoneCallHistoryPublic"/>
-    <uap:Capability Name="objects3D"/>
-    <uap:Capability Name="sharedUserCertificates"/>
-    <uap2:Capability Name="spatialPerception"/>
-    <uap:Capability Name="contacts"/>
-    <uap:Capability Name="chat"/>
-    <uap:Capability Name="enterpriseAuthentication"/>
-    <uap:Capability Name="videosLibrary"/>
-    <uap6:Capability Name="graphicsCapture"/>
-    <uap4:Capability Name="offlineMapsManagement"/>
-    <iot:Capability Name="systemManagement"/>
-    <uap:Capability Name="blockedChatMessages"/>
-    <uap:Capability Name="musicLibrary"/>
-    <uap4:Capability Name="userDataTasks"/>
-    <uap3:Capability Name="userNotificationListener"/>
-    <uap:Capability Name="userAccountInformation"/>
-    <uap3:Capability Name="remoteSystem"/>
-    <uap:Capability Name="appointments"/>
-    <Capability Name="privateNetworkClientServer"/>
     <DeviceCapability Name="bluetooth"/>
-    <DeviceCapability Name="lowLevel"/>
-    <DeviceCapability Name="pointOfService"/>
-    <DeviceCapability Name="proximity"/>
-    <DeviceCapability Name="microphone"/>
-    <DeviceCapability Name="webcam"/>
-    <DeviceCapability Name="location"/>
-    <DeviceCapability Name="gazeInput"/>
   </Capabilities>
 </Package>

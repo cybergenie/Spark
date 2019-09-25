@@ -6,7 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" d:DesignWidth="1027" d:DesignHeight="768">
     <Page.Resources>
         <DataTemplate x:Key="ResultsListViewTemplate" x:DataType="local:BluetoothLEDeviceDisplay">
             <Grid Margin="5">
@@ -28,12 +28,16 @@
     </Page.Resources>
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="85*"/>
+            <ColumnDefinition Width="277*"/>
+        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
             <RowDefinition Height="22"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <SplitView x:Name="Splitter" IsPaneOpen="True" Grid.Row="2" DisplayMode="Inline">
+        <SplitView x:Name="Splitter" IsPaneOpen="True" Grid.Row="2" DisplayMode="Inline" Grid.ColumnSpan="2">
             <SplitView.Pane>
                 <RelativePanel Margin="10,0,0,0">
                     <TextBlock x:Name="SampleTitle" Text="步态测量" Style="{StaticResource SampleHeaderTextStyle}" TextWrapping="Wrap" Margin="0,10,0,0"/>
@@ -67,7 +71,7 @@
                 </StackPanel>
             </RelativePanel>
         </SplitView>
-        <StackPanel x:Name="HeaderPanel" Orientation="Horizontal" Grid.RowSpan="2">
+        <StackPanel x:Name="HeaderPanel" Orientation="Horizontal" Grid.RowSpan="2" Grid.ColumnSpan="2">
             <Border Background="{ThemeResource SystemControlBackgroundChromeMediumBrush}" Grid.Row="0">
                 <ToggleButton Style="{StaticResource SymbolButton}" Click="Button_Click" VerticalAlignment="Top" Foreground="{ThemeResource ApplicationForegroundThemeBrush}">
                     <ToggleButton.Content>

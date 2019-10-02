@@ -34,17 +34,20 @@ namespace Spark
             StopBleDeviceWatcher();
 
             // Save the selected device's ID for use in other scenarios.
-            foreach(var iResultsListView in ResultsListView.Items)
+            if(ResultsListView!=null)
             {
-                var bleDeviceDisplay = iResultsListView as BluetoothLEDeviceDisplay;                
-                if (bleDeviceDisplay != null)
+                foreach (var iResultsListView in ResultsListView.Items)
                 {
-                    if (bleDeviceDisplay.IsChecked == true)
+                    var bleDeviceDisplay = iResultsListView as BluetoothLEDeviceDisplay;
+                    if (bleDeviceDisplay != null)
                     {
-                        if (rootPage.SelectedBleDeviceId.Contains(bleDeviceDisplay.Id) == false)
+                        if (bleDeviceDisplay.IsChecked == true)
                         {
-                            rootPage.SelectedBleDeviceId.Add(bleDeviceDisplay.Id);
-                            rootPage.SelectedBleDeviceName.Add(bleDeviceDisplay.Name);
+                            if (rootPage.SelectedBleDeviceId.Contains(bleDeviceDisplay.Id) == false)
+                            {
+                                rootPage.SelectedBleDeviceId.Add(bleDeviceDisplay.Id);
+                                rootPage.SelectedBleDeviceName.Add(bleDeviceDisplay.Name);
+                            }
                         }
                     }
                 }

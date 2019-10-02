@@ -27,8 +27,8 @@ namespace Spark
     {
         private MainPage rootPage = MainPage.Current;
         private List<BluetoothLEDevice> bluetoothLeDevice = new List<BluetoothLEDevice>();
-        private GattCharacteristic[] registeredCharacteristic = new GattCharacteristic[3];
-        
+        private GattCharacteristic[] registeredCharacteristic = new GattCharacteristic[3];        
+
         struct Data
         {
             public DateTime dateTime;
@@ -44,7 +44,7 @@ namespace Spark
         #region UI Code
         public Client()
         {
-            this.InitializeComponent();
+            this.InitializeComponent();           
         }
 
         protected async override void OnNavigatedTo(NavigationEventArgs e)
@@ -94,13 +94,13 @@ namespace Spark
             }
         }
 
-        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        protected async override void OnNavigatedFrom(NavigationEventArgs e)
         {
-            //var success = await ClearBluetoothLEDeviceAsync();
-            //if (!success)
-            //{
-            //    rootPage.NotifyUser("错误: 无法重置软件状态", NotifyType.ErrorMessage);
-            //}
+            var success = await ClearBluetoothLEDeviceAsync();
+            if (!success)
+            {
+                rootPage.NotifyUser("错误: 无法重置软件状态", NotifyType.ErrorMessage);
+            }
         }
         #endregion
 
@@ -218,6 +218,54 @@ namespace Spark
 
         }
         #endregion
+
+        private async Task<bool> ClearBluetoothLEDeviceAsync()
+        {
+
+            for (int i = 0; i < subscribedForNotifications.Length; i++)
+            {
+                if (subscribedForNotifications[i])
+                {
+                    // Need to clear the CCCD from the remote device so we stop receiving notifications
+
+                    var result = await registeredCharacteristic[i].WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.None);
+                    if (result != GattCommunicationStatus.Success)
+                    {
+                        return false;
+                    }
+                    else
+                    {                        
+                        switch (i)
+                        {
+                            case 0:
+                                registeredCharacteristic[0].ValueChanged -= Characteristic_ValueChanged_0;
+                                subscribedForNotifications[0] = false;
+                                break;
+                            case 1:
+                                registeredCharacteristic[1].ValueChanged -= Characteristic_ValueChanged_1;
+                                subscribedForNotifications[1] = false;
+                                break;
+                            case 2:
+                                registeredCharacteristic[2].ValueChanged -= Characteristic_ValueChanged_2;
+                                subscribedForNotifications[2] = false;
+                                break;
+                        }
+                    }
+
+                }
+               
+            }
+            if (bluetoothLeDevice != null)
+            {
+                for (int j = 0; j < bluetoothLeDevice.Count; j++)
+                {
+                    bluetoothLeDevice[j]?.Dispose();
+                    bluetoothLeDevice[j] = null;
+                }
+            }
+
+            return true;
+        }
 
         private void StopButton_Click()
         {
@@ -538,13 +586,28 @@ namespace Spark
 
             StorageFolder folder = ApplicationData.Current.LocalFolder;
             CharacteristicLatestValue3.Text = folder.Path;
+            RadioButton[,] radioButtons = new RadioButton[3,3] { { rbLL1, rbRL1, rbMI1 }, { rbLL1, rbRL1, rbMI1 }, { rbLL1, rbRL1, rbMI1 } };
+            string[] position = new string[3];
+
+            for(int i=0;i<3;i++)
+            {
+                for(int j=0;j<3;j++)
+                {
+                    if (radioButtons[i,j].IsChecked==true)
+                    {
+                        position[i] = radioButtons[i, j].Content.ToString();
+                    }
+                }
+            }
+
+
             try
             {
                 for (int i = 0; i < datas.Length; i++)
                 {
                     if (i<rootPage.SelectedBleDeviceId.Count)
                     {
-                        StorageFile sfile = await folder.CreateFileAsync($"{i+1}-传感器{rootPage.SelectedBleDeviceName[i]}数据.csv", CreationCollisionOption.ReplaceExisting);
+                        StorageFile sfile = await folder.CreateFileAsync($"{i+1}-{tbName.Text}-{position[i]}-传感器{rootPage.SelectedBleDeviceName[i]}数据.csv", CreationCollisionOption.GenerateUniqueName);
                         using (Stream file = await sfile.OpenStreamForWriteAsync())
                         {
                             using (StreamWriter writer = new StreamWriter(file))

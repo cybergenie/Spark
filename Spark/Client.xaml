@@ -36,9 +36,9 @@
                 </Grid.ColumnDefinitions>                
                 <TextBlock x:Name="CharacteristicLatestValue" Margin="0,10,0,0" HorizontalAlignment="Left" />
                 <StackPanel Orientation="Horizontal" Grid.Column="1">
-                    <RadioButton Content="左腿"/>
-                    <RadioButton Content="右腿"/>
-                    <RadioButton Content="腰部"/>
+                    <RadioButton x:Name="rbLL1" Content="左腿"/>
+                    <RadioButton x:Name="rbRL1" Content="右腿"/>
+                    <RadioButton x:Name="rbMI1" Content="腰部"/>
                 </StackPanel>                
             </Grid>
             <Grid>
@@ -48,9 +48,9 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="CharacteristicLatestValue1" Margin="0,10,0,0" HorizontalAlignment="Left" />
                 <StackPanel Orientation="Horizontal" Grid.Column="1">
-                    <RadioButton Content="左腿"/>
-                    <RadioButton Content="右腿"/>
-                    <RadioButton Content="腰部"/>
+                    <RadioButton x:Name="rbLL2" Content="左腿"/>
+                    <RadioButton x:Name="rbRL2" Content="右腿"/>
+                    <RadioButton x:Name="rbMI2" Content="腰部"/>
                 </StackPanel>                
             </Grid>
             <Grid>
@@ -60,9 +60,9 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="CharacteristicLatestValue2" Margin="0,10,0,0" HorizontalAlignment="Left" />
                 <StackPanel Orientation="Horizontal" Grid.Column="1">
-                    <RadioButton Content="左腿"/>
-                    <RadioButton Content="右腿"/>
-                    <RadioButton Content="腰部"/>
+                    <RadioButton x:Name="rbLL3" Content="左腿"/>
+                    <RadioButton x:Name="rbRL3" Content="右腿"/>
+                    <RadioButton x:Name="rbMI3" Content="腰部"/>
                 </StackPanel>
             </Grid>
             <TextBox x:Name="CharacteristicLatestValue3" Margin="0,10,0,0"/>

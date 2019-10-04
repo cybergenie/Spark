@@ -43,7 +43,15 @@ namespace Spark
                     {
                         if (bleDeviceDisplay.IsChecked == true)
                         {
-                            if (rootPage.SelectedBleDeviceId.Contains(bleDeviceDisplay.Id) == false)
+                            if (rootPage.SelectedBleDeviceId != null)
+                            {
+                                if (rootPage.SelectedBleDeviceId.Contains(bleDeviceDisplay.Id) == false)
+                                {
+                                    rootPage.SelectedBleDeviceId.Add(bleDeviceDisplay.Id);
+                                    rootPage.SelectedBleDeviceName.Add(bleDeviceDisplay.Name);
+                                }
+                            }
+                            else
                             {
                                 rootPage.SelectedBleDeviceId.Add(bleDeviceDisplay.Id);
                                 rootPage.SelectedBleDeviceName.Add(bleDeviceDisplay.Name);

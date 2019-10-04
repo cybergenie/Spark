@@ -49,54 +49,67 @@ namespace Spark
 
         protected async override void OnNavigatedTo(NavigationEventArgs e)
         {
-            SelectedDeviceRun.Text = rootPage.SelectedBleDeviceName.Count.ToString(); 
-            try
+            if (rootPage.SelectedBleDeviceId != null )
             {
-                // BT_Code: BluetoothLEDevice.FromIdAsync must be called from a UI thread because it may prompt for consent.
-                foreach (var SelectedBleDevice in rootPage.SelectedBleDeviceId)
+                SelectedDeviceRun.Text = rootPage.SelectedBleDeviceName.Count.ToString();
+                try
                 {
-                    bluetoothLeDevice.Add(await BluetoothLEDevice.FromIdAsync(SelectedBleDevice));
+                    // BT_Code: BluetoothLEDevice.FromIdAsync must be called from a UI thread because it may prompt for consent.
+                    foreach (var SelectedBleDevice in rootPage.SelectedBleDeviceId)
+                    {
+                        bluetoothLeDevice.Add(await BluetoothLEDevice.FromIdAsync(SelectedBleDevice));
+                    }
+
+                    if (bluetoothLeDevice == null)
+                    {
+                        rootPage.NotifyUser("连接到设备失败.", NotifyType.ErrorMessage);
+                    }
+                }
+                catch (Exception ex) when (ex.HResult == E_DEVICE_NOT_AVAILABLE)
+                {
+                    rootPage.NotifyUser("蓝牙没有打开.", NotifyType.ErrorMessage);
                 }
 
-                if (bluetoothLeDevice == null)
+                switch (bluetoothLeDevice.Count)
                 {
-                    rootPage.NotifyUser("连接到设备失败.", NotifyType.ErrorMessage);
+                    case 1:
+                        ConnectButton1.IsEnabled = true;
+                        ConnectButton2.IsEnabled = false;
+                        ConnectButton3.IsEnabled = false;
+                        break;
+                    case 2:
+                        ConnectButton1.IsEnabled = true;
+                        ConnectButton2.IsEnabled = true;
+                        ConnectButton3.IsEnabled = false;
+                        break;
+                    case 3:
+                        ConnectButton1.IsEnabled = true;
+                        ConnectButton2.IsEnabled = true;
+                        ConnectButton3.IsEnabled = true;
+                        break;
+                    default:
+                        ConnectButton1.IsEnabled = false;
+                        ConnectButton2.IsEnabled = false;
+                        ConnectButton3.IsEnabled = false;
+                        break;
+
                 }
             }
-            catch (Exception ex) when (ex.HResult == E_DEVICE_NOT_AVAILABLE)
+            else
             {
-                rootPage.NotifyUser("蓝牙没有打开.", NotifyType.ErrorMessage);
-            }
-
-            switch (bluetoothLeDevice.Count)
-            {               
-                case 1:
-                    ConnectButton1.IsEnabled = true;
-                    ConnectButton2.IsEnabled = false;
-                    ConnectButton3.IsEnabled = false;
-                    break;
-                case 2:
-                    ConnectButton1.IsEnabled = true;
-                    ConnectButton2.IsEnabled = true;
-                    ConnectButton3.IsEnabled = false;
-                    break;
-                case 3:
-                    ConnectButton1.IsEnabled = true;
-                    ConnectButton2.IsEnabled = true;
-                    ConnectButton3.IsEnabled = true;
-                    break;
-                default:
-                    ConnectButton1.IsEnabled = false;
-                    ConnectButton2.IsEnabled = false;
-                    ConnectButton3.IsEnabled = false;
-                    break;
-
+                rootPage.NotifyUser("没有选择蓝牙设备.", NotifyType.ErrorMessage);
+                ConnectButton1.IsEnabled = false;
+                ConnectButton2.IsEnabled = false;
+                ConnectButton3.IsEnabled = false;
             }
         }
 
         protected async override void OnNavigatedFrom(NavigationEventArgs e)
         {
             var success = await ClearBluetoothLEDeviceAsync();
+            registeredCharacteristic = null;
+            datas = null;
+
             if (!success)
             {
                 rootPage.NotifyUser("错误: 无法重置软件状态", NotifyType.ErrorMessage);
@@ -183,7 +196,7 @@ namespace Spark
 
         private async void ConnectButton3_Click()
         {
-            ConnectButton2.IsEnabled = false;
+            ConnectButton3.IsEnabled = false;
             //subscribedForNotifications = false;
 
             if (bluetoothLeDevice != null)
@@ -263,6 +276,15 @@ namespace Spark
                     bluetoothLeDevice[j] = null;
                 }
             }
+            bluetoothLeDevice = null;
+            rootPage.SelectedBleDeviceId = null;
+            rootPage.SelectedBleDeviceName = null;
+            ConnectButton1.Content = "连接设备1";
+            ConnectButton1.IsEnabled = false;
+            ConnectButton2.Content = "连接设备2";
+            ConnectButton2.IsEnabled = false;
+            ConnectButton3.Content = "连接设备3";
+            ConnectButton3.IsEnabled = false;
 
             return true;
         }
@@ -586,7 +608,7 @@ namespace Spark
 
             StorageFolder folder = ApplicationData.Current.LocalFolder;
             CharacteristicLatestValue3.Text = folder.Path;
-            RadioButton[,] radioButtons = new RadioButton[3,3] { { rbLL1, rbRL1, rbMI1 }, { rbLL1, rbRL1, rbMI1 }, { rbLL1, rbRL1, rbMI1 } };
+            RadioButton[,] radioButtons = new RadioButton[3,3] { { rbLL1, rbRL1, rbMI1 }, { rbLL2, rbRL2, rbMI2 }, { rbLL3, rbRL3, rbMI3 } };
             string[] position = new string[3];
 
             for(int i=0;i<3;i++)

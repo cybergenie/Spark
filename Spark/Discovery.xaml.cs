@@ -50,12 +50,14 @@ namespace Spark
                                     rootPage.SelectedBleDeviceId.Add(bleDeviceDisplay.Id);
                                     rootPage.SelectedBleDeviceName.Add(bleDeviceDisplay.Name);
                                 }
+                                
                             }
                             else
                             {
                                 rootPage.SelectedBleDeviceId.Add(bleDeviceDisplay.Id);
                                 rootPage.SelectedBleDeviceName.Add(bleDeviceDisplay.Name);
                             }
+                            
                         }
                     }
                 }

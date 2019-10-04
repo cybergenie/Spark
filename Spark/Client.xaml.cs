@@ -276,9 +276,9 @@ namespace Spark
                     bluetoothLeDevice[j] = null;
                 }
             }
-            bluetoothLeDevice = null;
-            rootPage.SelectedBleDeviceId = null;
-            rootPage.SelectedBleDeviceName = null;
+            bluetoothLeDevice.Clear();
+            rootPage.SelectedBleDeviceId.Clear();
+            rootPage.SelectedBleDeviceName.Clear();           
             ConnectButton1.Content = "连接设备1";
             ConnectButton1.IsEnabled = false;
             ConnectButton2.Content = "连接设备2";

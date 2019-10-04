@@ -14,7 +14,7 @@
   <Identity
     Name="745c5c8b-6860-4585-8e18-135c4bac75a6"
     Publisher="CN=Li Jinwei"
-    Version="1.0.7.0" />
+    Version="1.0.9.0" />
 
   <mp:PhoneIdentity PhoneProductId="745c5c8b-6860-4585-8e18-135c4bac75a6" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
